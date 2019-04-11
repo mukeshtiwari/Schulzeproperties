@@ -200,7 +200,7 @@ Qed.
 Lemma max_of_nonempty_list :
   forall (A : Type) (l : list A) (H : l <> nil) (H1 : forall x y : A, {x = y} + {x <> y}) (s : Z) (f : A -> Z),
     maxlist (map f l) >= s <-> exists (x:A), In x l /\ f x >= s.
-Proof.
+Proof. 
   split; intros. generalize dependent l.
   induction l; intros. specialize (H eq_refl). inversion H.
   pose proof (list_eq_dec H1 l []).
@@ -352,8 +352,59 @@ Proof.
   left. congruence. right. apply IHl. assumption.
 Qed.
 
+Lemma upperbound_of_nonempty_list :
+  forall (A : Type) (l : list A)
+    (H : l <> nil) (H1 : forall x y : A, {x = y} + {x <> y}) (s : Z) (f : A -> Z),
+    maxlist (map f l) <= s <-> forall x, In x l -> f x <= s.
+Proof.
+  intros A l H H1 s f. 
+  split; intros.
+  induction l.
+  + congruence.
+  + destruct l.
+    inversion H2; subst.
+    cbn in *. auto.
+    inversion H3.
+    assert (Ht : (map f (a :: a0 :: l)) = f a :: map f (a0 :: l)) by auto.
+    rewrite Ht in H0. clear Ht.
+    assert (Ht :  maxlist (f a :: map f (a0 :: l)) = Z.max (f a) (maxlist (map f (a0 :: l))))
+      by auto. rewrite Ht in H0. clear Ht.
+    assert (Ht : {f a >= maxlist (map f (a0 :: l))} + {f a < maxlist (map f (a0 :: l))}) by
+        apply (Z_ge_lt_dec (f a) (maxlist (map f (a0 :: l)))).
+    destruct H2.  subst.
+    destruct Ht.  Require Import Psatz.
+    assert (Hz :  Z.max (f x) (maxlist (map f (a0 :: l))) = f x) by lia. 
+    rewrite Hz in H0. auto.
+    assert (Hz : Z.max (f x) (maxlist (map f (a0 :: l))) = maxlist (map f (a0 :: l))) by lia.
+    rewrite Hz in H0. lia.
+    destruct Ht.
+    assert (H3 : a0 :: l <> []). intro. congruence.
+    assert (H4 :  maxlist (map f (a0 :: l)) <= s) by lia.
+    apply IHl; try auto.
+    assert (H3 : a0 :: l <> []). intro. congruence.
+    assert (H4 :  maxlist (map f (a0 :: l)) <= s) by lia.
+    apply IHl; try auto.
 
-  
+    (* first half finished *)
+
+  + induction l.
+    congruence.
+    destruct l. cbn.
+    pose proof (H0 a). firstorder.
+    assert (Ht : (map f (a :: a0 :: l)) = f a :: map f (a0 :: l)) by auto.
+    rewrite Ht. clear Ht.
+    assert (Ht :  maxlist (f a :: map f (a0 :: l)) = Z.max (f a) (maxlist (map f (a0 :: l))))
+      by auto. rewrite Ht. clear Ht.
+    assert (Ht : {f a >= maxlist (map f (a0 :: l))} + {f a < maxlist (map f (a0 :: l))}) by
+        apply (Z_ge_lt_dec (f a) (maxlist (map f (a0 :: l)))).
+    destruct Ht.
+    pose proof (H0 a (in_eq a (a0 :: l))).
+    lia.
+    assert (Ht : Z.max (f a) (maxlist (map f (a0 :: l))) = maxlist (map f (a0 :: l))) by lia.
+    rewrite Ht.  apply IHl. intro. congruence.
+    intros x Hx. firstorder.
+Qed.
+        
 (*  Shows the type level existence of element x in list l >=  s if maximum element of
    list l >= s *)
 Lemma max_of_nonempty_list_type :
