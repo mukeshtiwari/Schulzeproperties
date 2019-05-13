@@ -429,7 +429,7 @@ Section Properties.
     Lemma c_wins_true (c : cand) :
       c_wins c = true <-> forall d, M (length cand_all) d c <= M (length cand_all) c d.
     Proof.
-      split; intros.
+      split; intros. 
       unfold c_wins in H.
       pose proof
            (proj1 (forallb_forall
@@ -703,22 +703,65 @@ Section Properties.
       apply c_wins_false. apply loses_prop_iterated_marg. auto.
     Qed.
 
+  
+    Lemma marg_dec : forall (a b : Z), {a <= b} + {b <= a}.
+    Proof.
+      intros a b.
+      destruct (Ztrichotomy_inf a b) as [[H1 | H2] | H3].
+      left; lia.
+      left; lia.
+      right; lia.
+    Qed.
+        
+        
     (* if candidate c beats everyone in head to head count, then it beats
        everyone in generalized margin *)
     Lemma condercet_winner (c : cand) :
-      (forall d, marg d c <= marg c d) -> forall n d , M_old n d c <= M_old n c d.
+      forall n, (forall d, marg d c <= marg c d) -> forall d, M n d c <= M n c d.
     Proof.
-      intros Hd.
-      induction n; cbn; try auto. 
-      intro d.
+      intros n Hd d. 
+      repeat rewrite M_M_new_equal.
+      generalize dependent d.
+      induction n; cbn; try auto.
+      intros d. 
+      assert (Hcanddec : forall n x y, {M_old n x y <= M_old n y x} + {M_old n y x <= M_old n x y}).
+      intros n0 x y. apply marg_dec. 
+      assert (Hmargdec : forall x y, {marg x y <= marg y x} + {marg y x <= marg x y}).
+      intros x y.  apply marg_dec.
+      assert (HmMdec : forall n x y, {M_old n x y <= marg x y} + {marg x y <= M_old n x y}).
+      intros n0 x y. apply marg_dec.
+      
+
+      
+      pose proof Z.max_dec.
+      destruct (H (M_old n d c)
+                  (maxlist (map (fun x : cand => Z.min (marg d x) (M_old n x c)) cand_all)))
+        as [Hl1 | Hr1];
+        destruct (H (M_old n c d)
+                    (maxlist (map (fun x : cand => Z.min (marg c x) (M_old n x d)) cand_all)))
+        as [Hl2 | Hr2].  
+      rewrite Hl1, Hl2; auto.
+      rewrite Hl1, Hr2.
+      apply Z.max_l_iff in Hl1.
+      apply Z.max_r_iff in Hr2.
+      (* From Hl1, we know that every all the path going via intermediate nodes 
+         are less than M n d c
+         Hr2 says that there is a node which improves the strength *)
+      (* I am so stupid. Why did I not see this in first place. *)
+      pose proof (IHn d). lia.
+
+      (* Next goal *)
+      rewrite Hr1, Hl2.
+      apply Z.max_r_iff in Hr1.
+      apply Z.max_l_iff in Hl2.
+      (* Hr1 says that we can improve the strenght of path from d to c 
+         by some intermediate node x. d ==> x ==> c. 
+         Hl2 says that we can't improve the strenght of path from c to d 
+         by all the intermediate nodes *)
+     
+
       
       
-      apply Z.max_le_iff.
-
-      left. apply Z.max_lub.
-      auto.
-        
-
   End Evote.
 
   
