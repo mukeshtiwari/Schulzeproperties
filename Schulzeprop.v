@@ -716,7 +716,7 @@ Section Properties.
 
 
 
-
+   
     Definition condercet_winner (c : cand) :=
       forall d, marg c d >= 0.
 
@@ -743,16 +743,30 @@ Section Properties.
       + cbn. intros d. pose proof (marg_neq c d).
         pose proof (Hc d). lia. 
       + cbn. intros d.
-    Admitted.
+        apply Z.max_lub_iff. 
+        split.
+        pose proof (IHn d). lia.
+        apply upperbound_of_nonempty_list; try auto.
+        intros x Hx. pose proof (IHn x).
+        lia.
+    Qed.
     
-         
-      
-      
+        
     (* if candidate c beats everyone in head to head count, then it beats
        everyone in generalized margin *)
-    Lemma condercet_winner (c : cand) :
+    Lemma condercet_winner_marg (c : cand) :
       forall n, (forall d, marg d c <= marg c d) -> forall d, M n d c <= M n c d.
     Proof.
+      intros n Hd d.
+      
+
+
+
+
+
+
+
+      
       intros n Hd d. 
       repeat rewrite M_M_new_equal.
       generalize dependent d.
