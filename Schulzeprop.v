@@ -716,7 +716,7 @@ Section Properties.
 
 
 
-   
+    
     Definition condercet_winner (c : cand) :=
       forall d, marg c d >= 0.
 
@@ -751,88 +751,45 @@ Section Properties.
         lia.
     Qed.
     
-        
+
+    Lemma condercet_winner_genmarg :
+      forall c d n, condercet_winner c -> M n d c <= M n c d.
+    Proof.
+      intros c d n Hc.
+      pose proof (gen_marg_gt0 c d n Hc).
+      pose proof (gen_marg_lt0 c d n Hc).
+      lia.
+    Qed.
+
+
+    Lemma condercet_winner_headoff :
+      forall c, condercet_winner c <-> (forall d,  marg d c <= marg c d).
+    Proof.
+      split; intros Hc d.
+      unfold condercet_winner in Hc.
+      pose proof (Hc d).
+      pose proof (marg_neq c d).
+      lia.
+
+      pose proof (Hc d). 
+      pose proof (marg_neq d c).
+      lia.
+    Qed.
+    
+    
+      
     (* if candidate c beats everyone in head to head count, then it beats
        everyone in generalized margin *)
     Lemma condercet_winner_marg (c : cand) :
       forall n, (forall d, marg d c <= marg c d) -> forall d, M n d c <= M n c d.
-    Proof.
-      intros n Hd d.
+    Proof. 
+      intros n Hc d.
+      apply condercet_winner_genmarg.
+      apply condercet_winner_headoff.
+      auto.
+    Qed.
+    
       
-
-
-
-
-
-
-
-      
-      intros n Hd d. 
-      repeat rewrite M_M_new_equal.
-      generalize dependent d.
-      induction n; cbn; try auto.
-      intros d.
-      
-
-
-
-
-      
-      assert (Hcanddec : forall n x y, {M_old n x y <= M_old n y x} + {M_old n y x <= M_old n x y}).
-      intros n0 x y. apply marg_dec. 
-      assert (Hmargdec : forall x y, {marg x y <= marg y x} + {marg y x <= marg x y}).
-      intros x y.  apply marg_dec.
-      assert (HmMdec : forall n x y, {M_old n x y <= marg x y} + {marg x y <= M_old n x y}).
-      intros n0 x y. apply marg_dec.
-       
-      
-      
-      pose proof Z.max_dec.
-      destruct (H (M_old n d c)
-                  (maxlist (map (fun x : cand => Z.min (marg d x) (M_old n x c)) cand_all)))
-        as [Hl1 | Hr1];
-        destruct (H (M_old n c d)
-                    (maxlist (map (fun x : cand => Z.min (marg c x) (M_old n x d)) cand_all)))
-        as [Hl2 | Hr2].  
-      rewrite Hl1, Hl2; auto. 
-      rewrite Hl1, Hr2.
-      apply Z.max_l_iff in Hl1.
-      apply Z.max_r_iff in Hr2. 
-      (* From Hl1, we know that every all the path going via intermediate nodes 
-         are less than M n d c
-         Hr2 says that there is a node which improves the strength *)
-      (* I am so stupid. Why did I not see this in first place. *)
-      pose proof (IHn d). lia.
-  
-      (* Next goal *)
-      rewrite Hr1, Hl2.
-      apply Z.max_r_iff in Hr1.
-      apply Z.max_l_iff in Hl2.
-      
-      (* Hr1 says that we can improve the strenght of path from d to c 
-         by some intermediate node x. d ==> x ==> c. 
-         Hl2 says that we can't improve the strenght of path from c to d 
-         by all the intermediate nodes *)
-
-      
-      assert (Ht : maxlist (map (fun x : cand => Z.min (marg d x) (M_old n x c)) cand_all)
-                   <=
-                   maxlist (map (fun x : cand => Z.min (marg c x) (M_old n x d)) cand_all)).
-      
-      
-      
-      apply upperbound_of_nonempty_list; try auto.
-      intros x Hx.
-      pose proof (max_of_nonempty_list _ cand_all cand_not_nil dec_cand
-                                       (Z.min (marg d x) (M_old n x c))
-                                       ((fun x0 : cand => Z.min (marg c x0) (M_old n x0 d)))) as H1.
-      cbn in H1.
-      apply Z.ge_le.
-      apply H1. clear H1. 
-
-
-      exists x. split. auto.
-      apply Z.le_ge. 
       
   End Evote.
 
