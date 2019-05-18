@@ -789,6 +789,20 @@ Section Properties.
       auto.
     Qed.
     
+    (* if candidate c is condercet winner then it's winner of election *)
+    Lemma condercet_winner_implies_winner (c : cand) :
+      condercet_winner c -> c_wins c = true. 
+    Proof.
+      intros Hc. 
+      pose proof  condercet_winner_genmarg.
+      pose proof c_wins_true.
+      apply H0. intros d.
+      pose proof (H c d (length cand_all) Hc).
+      auto.
+    Qed.
+    
+      
+      
       
       
   End Evote.
