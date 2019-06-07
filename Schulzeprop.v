@@ -36,7 +36,7 @@ Section Properties.
        is assumed for the specification of Schulze Voting and will be
        constructed from incoming ballots later *)
     Variable marg : cand -> cand -> Z.
-    Hypothesis marg_neq : forall c d, marg c d = -marg d c.
+   
                
     (* prop-level path *)
     Inductive Path (k: Z) : cand -> cand -> Prop :=
@@ -704,6 +704,16 @@ Section Properties.
       apply c_wins_false. apply loses_prop_iterated_marg. auto.
     Qed.
 
+   
+
+  End Evote.
+
+  (* Start of properties. Move it other module *)
+  Section Propt.
+
+    (* Make marg implicit *)
+   
+    Hypothesis marg_neq : forall c d (marg : cand -> cand -> Z), marg c d = -marg d c. 
   
     Lemma marg_dec : forall (a b : Z), {a <= b} + {b <= a}.
     Proof.
@@ -714,17 +724,16 @@ Section Properties.
       right; lia.
     Qed.
 
-
-
     
-    Definition condercet_winner (c : cand) :=
+    
+    Definition condercet_winner (c : cand) (marg : cand -> cand -> Z) :=
       forall d, marg c d >= 0.
 
     Lemma gen_marg_gt0 :
-      forall c d n, condercet_winner c -> M n c d >= 0.
-    Proof.
+      forall c d n marg, condercet_winner c marg -> M marg n c d >= 0.
+    Proof. 
       unfold condercet_winner.
-      intros c d n Hc.
+      intros c d n marg Hc.
       rewrite M_M_new_equal. 
       revert d; revert n.
       induction n; cbn; try auto.
@@ -733,14 +742,14 @@ Section Properties.
     Qed.
 
     Lemma gen_marg_lt0 :
-      forall c d n, condercet_winner c -> M n d c <= 0.
+      forall c d n marg , condercet_winner c marg -> M marg n d c <= 0.
     Proof.
       unfold condercet_winner.
-      intros c d n Hc.
+      intros c d n marg Hc.
       rewrite M_M_new_equal.
       revert d; revert n.
       induction n.
-      + cbn. intros d. pose proof (marg_neq c d).
+      + cbn. intros d. pose proof (marg_neq c d marg).
         pose proof (Hc d). lia. 
       + cbn. intros d.
         apply Z.max_lub_iff. 
@@ -751,28 +760,28 @@ Section Properties.
         lia.
     Qed.
     
-
+   
     Lemma condercet_winner_genmarg :
-      forall c d n, condercet_winner c -> M n d c <= M n c d.
+      forall c d n marg, condercet_winner c marg -> M marg n d c <= M marg n c d.
     Proof.
-      intros c d n Hc.
-      pose proof (gen_marg_gt0 c d n Hc).
-      pose proof (gen_marg_lt0 c d n Hc).
+      intros c d n marg Hc.
+      pose proof (gen_marg_gt0 c d n marg Hc).
+      pose proof (gen_marg_lt0 c d n marg Hc).
       lia.
     Qed.
 
 
     Lemma condercet_winner_headoff :
-      forall c, condercet_winner c <-> (forall d,  marg d c <= marg c d).
+      forall c marg, condercet_winner c marg <-> (forall d,  marg d c <= marg c d).
     Proof.
-      split; intros Hc d.
+      split; intros Hc d. 
       unfold condercet_winner in Hc.
       pose proof (Hc d).
-      pose proof (marg_neq c d).
+      pose proof (marg_neq c d marg).
       lia.
 
       pose proof (Hc d). 
-      pose proof (marg_neq d c).
+      pose proof (marg_neq d c marg).
       lia.
     Qed.
     
@@ -780,8 +789,8 @@ Section Properties.
       
     (* if candidate c beats everyone in head to head count, then it beats
        everyone in generalized margin *)
-    Lemma condercet_winner_marg (c : cand) :
-      forall n, (forall d, marg d c <= marg c d) -> forall d, M n d c <= M n c d.
+    Lemma condercet_winner_marg (c : cand) (marg : cand -> cand -> Z) :
+      forall n, (forall d, marg d c <= marg c d) -> forall d, M marg n d c <= M marg n c d.
     Proof. 
       intros n Hc d.
       apply condercet_winner_genmarg.
@@ -790,22 +799,35 @@ Section Properties.
     Qed.
     
     (* if candidate c is condercet winner then it's winner of election *)
-    Lemma condercet_winner_implies_winner (c : cand) :
-      condercet_winner c -> c_wins c = true. 
+    Lemma condercet_winner_implies_winner (c : cand) (marg : cand -> cand -> Z) :
+      condercet_winner c marg -> c_wins marg c = true. 
     Proof.
       intros Hc. 
       pose proof  condercet_winner_genmarg.
       pose proof c_wins_true.
       apply H0. intros d.
-      pose proof (H c d (length cand_all) Hc).
+      pose proof (H c d (length cand_all) marg Hc).
       auto.
     Qed.
     
+
+    (* We reverse the ballot. Reversing the ballot and computing 
+       the margin is equlivalent to -1 * marg c d *)
+    Definition rev_marg (marg : cand -> cand -> Z) (c d : cand) :=
+      -1 * marg c d.
+
+    Lemma marg_rev_marg_opposite :
+      forall c d marg, marg c d * rev_marg marg c d <= 0.
+    Proof.
+      intros c d marg. unfold rev_marg;
+                    destruct marg; cbn; try lia.
+    Qed.
+
+
+  End Propt. 
+    
+    
       
-      
-      
-      
-  End Evote.
 
   
   Section  Count.
