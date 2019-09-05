@@ -711,7 +711,7 @@ Section Properties.
   (* Start of properties. Move it other module *)
   Section Propt.
 
-    (* Make marg implicit *)
+    (* Make marg explicity *)
    
     Hypothesis marg_neq : forall c d (marg : cand -> cand -> Z), marg c d = -marg d c. 
   
@@ -809,21 +809,150 @@ Section Properties.
       pose proof (H c d (length cand_all) marg Hc).
       auto.
     Qed.
-    
 
+    (* End of condercet property *)
+
+
+
+
+    (* Alternative definition of condercet which implies unique winner *)
+    (* Definition condercet_winner (c : cand) (marg : cand -> cand -> Z) :=
+           forall d, marg c d > 0 ? *)
+
+     (* Definition unique_winner (c : cand) (marg cand -> cand -> Z) := 
+          forall d, M (length cand_all) marg d c < M (length cand_all) c d *)
+    (* prove the lemma that condercet <-> unique_winner *)
+
+    (*End of Alternative definition *)
+
+
+
+
+
+    
+    (* Beginning of reversal symmetry *)
     (* We reverse the ballot. Reversing the ballot and computing 
-       the margin is equlivalent to -1 * marg c d *)
+       the margin is equlivalent to marg d c*)
+    
     Definition rev_marg (marg : cand -> cand -> Z) (c d : cand) :=
-      -1 * marg c d.
+      -marg c d. (* We multiply -1 to margin matrix *)
 
     Lemma marg_rev_marg_opposite :
       forall c d marg, marg c d * rev_marg marg c d <= 0.
     Proof.
-      intros c d marg. unfold rev_marg;
-                    destruct marg; cbn; try lia.
+      intros c d marg. unfold rev_marg.
+      pose proof (marg_neq c d marg).
+      rewrite H. 
+      destruct (marg d c). lia.
+      assert (Ht : Z.pos p * Z.pos p > 0)
+        by auto with zarith. lia.
+      
+      assert (Ht : Z.neg p * Z.neg p > 0).
+      firstorder. lia.  
     Qed.
 
+    Lemma marg_pos_neg :
+      forall c d marg, (marg c d > 0 /\ rev_marg marg c d < 0) \/
+                  (marg c d = 0 /\ rev_marg marg c d = 0) \/
+                  (marg c d < 0 /\ rev_marg marg c d > 0).
+    Proof.
+      intros c d marg.
+      unfold rev_marg.
+      lia.
+    Qed.
+      
+    Lemma marg_and_rev_marg_add_zero :
+      forall (c d : cand) (marg : cand -> cand -> Z),
+        rev_marg marg c d = marg d c. 
+    Proof.
+      intros c d marg. unfold rev_marg.
+      rewrite marg_neq. lia.
+    Qed.
+ 
+        
+    (* for any two candidate c and d, if path strength between them is 
+       M n marg c d, then it's equal M n (rev_marg marg) d c. *)
+    Lemma connect_m_with_M :
+      forall n c d marg, M marg n c d = M (rev_marg marg) n d c. 
+    Proof.
+      intros n c d marg.
+      repeat rewrite  M_M_new_equal. unfold rev_marg. 
+      revert d; revert c; revert n.
+      (* How to take advantage of the fact that 
+         rev_marg marg is same as marg except every entry 
+         is multiplied by -1 *)
+      
+    Admitted.     
 
+  
+    
+      
+      
+    Lemma winner_reversed :
+      forall marg, (exists d, c_wins marg d = false) -> (* there is loser *)
+      forall c, c_wins marg c = true -> c_wins (rev_marg marg) c = false.
+    Proof. 
+      intros marg [dlose Hdlose] c Hc.
+      rewrite c_wins_true in Hc. 
+      rewrite c_wins_false in Hdlose.
+      destruct Hdlose as [d Hdlose].
+      rewrite c_wins_false. 
+      (* c is offcourse beaten by dlose with respect to reverse 
+         margin *)
+      exists dlose.
+      (* c is winner wrt to marg. It means that 
+         M marg (length cand_all) dlose c < M marg (length cand_all) c dlose *)
+      assert (Ht : M marg (length cand_all) dlose c < M marg (length cand_all) c dlose).
+      pose proof (Hc d). 
+      pose proof (Zle_lt_or_eq _ _ H). 
+      (* We need to infer that M is transitive
+         M a b < M b a
+         M b c <= M c b
+        ===============
+        M a b < M c b *)
+      
+      
+      
+      rewrite <- connect_m_with_M.
+      rewrite <- connect_m_with_M . 
+      auto. 
+
+
+
+
+
+      
+    
+    (* Do I need a notion of Unique winner ? *)
+    (* Yes, I need to make sure that c is unique winner, so that it goes into 
+       loser category if margin is reversed *)
+    Definition unique_winner (c : cand) (marg : cand -> cand -> Z) :=
+      forall d : cand, M marg (length cand_all) d c < M marg (length cand_all) c d.
+    (*
+      c_wins marg c = true /\ (forall d, d <> c -> c_wins marg d = false).
+     *)
+
+
+      
+      
+    (* If c is winner with respect to marg, then c loses with respect to rev_marg *)
+    Lemma winner_reversed :
+      forall c (marg : cand -> cand -> Z), unique_winner c marg -> c_wins (rev_marg marg) c = false.
+    Proof.
+      unfold unique_winner.
+      intros c marg H.
+      eapply c_wins_false.
+      exists c. specialize (H c).
+      rewrite connect_m_with_M in H.
+      auto. 
+    Qed.
+    
+
+      
+    
+      
+      
+      
   End Propt. 
     
     
