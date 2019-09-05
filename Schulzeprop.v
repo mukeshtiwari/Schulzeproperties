@@ -813,7 +813,7 @@ Section Properties.
     (* End of condercet property *)
 
 
-
+   
 
     (* Alternative definition of condercet which implies unique winner *)
     (* Definition condercet_winner (c : cand) (marg : cand -> cand -> Z) :=
@@ -869,6 +869,36 @@ Section Properties.
       rewrite marg_neq. lia.
     Qed.
  
+
+
+    Lemma str_min_assoc : forall l marg c d a, 
+      str marg c (l ++ [a]) d =
+      Z.min (str marg c l a) (marg a d).
+    Proof.
+      induction l.
+      +  cbn.  auto.
+      + intros marg c d a0.  cbn.
+        pose proof (IHl marg a d a0).
+        rewrite H. lia.
+    Qed.
+    
+
+    (* Path from c to d with respect to marg is same as 
+       path from d to c with respect to rev_marg *)
+    Lemma str_and_rev_str : forall l marg c d,
+        str marg c l d = str (rev_marg marg) d (rev l) c.
+    Proof.
+      induction l.
+      + intros marg c d.
+        unfold rev_marg. cbn; auto.
+      + intros marg c d.
+        cbn. rewrite str_min_assoc.
+        pose proof (IHl marg a d).
+        rewrite <- H.
+        rewrite marg_and_rev_marg_add_zero.
+        lia.
+    Qed.
+    
         
     (* for any two candidate c and d, if path strength between them is 
        M n marg c d, then it's equal M n (rev_marg marg) d c. *)
