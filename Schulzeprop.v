@@ -899,57 +899,114 @@ Section Properties.
         lia.
     Qed.
     
-        
-    (* for any two candidate c and d, if path strength between them is 
+
+  
+    
+   
+      
+
+    Lemma path_less :
+      forall marg c d k1 k2, k2 >= k1 -> Path marg k2 c d -> Path marg k1 c d.
+    Proof.
+      intros marg c d k1 k2 Hk Hp.
+      induction Hp.
+      + constructor. lia.
+      + assert (marg c d >= k1) by lia.
+        pose (cons marg k1 c d e H0 IHHp).
+        auto.
+    Qed.
+    
+    Lemma path_concat :
+      forall marg c d e k1 k2, Path marg k1 c d -> Path marg k2 d e -> Path marg (Z.min k1 k2) c e.
+    Proof.
+      intros marg c d e k1 k2 Hp1 Hp2.
+      assert (k1 >= Z.min k1 k2 /\ k2 >= Z.min k1 k2) by lia.
+      destruct H as [H1 H2].
+      pose proof (path_less marg c d (Z.min k1 k2) k1 H1 Hp1).
+      pose proof (path_less marg d e (Z.min k1 k2) k2 H2 Hp2).
+      clear Hp1; clear Hp2.
+      induction H.
+      pose proof (cons marg (Z.min k1 k2) c d e H H0).
+      auto.
+      pose proof (IHPath H0).
+      pose (cons _ _ _ _ _ H H4). auto.
+    Qed.
+    
+      
+
+    Lemma path_with_rev_marg :
+      forall k marg c d,
+       Path marg k c d <->  Path (rev_marg marg) k d c.
+    Proof.
+      intros k marg c d.
+      split. intro H. 
+      destruct (path_iterated_marg marg k c d H) as [n Hn].
+      destruct (proj1 (iterated_marg_char marg n c d k) Hn) as [l [H1 H2]].
+      rewrite  str_and_rev_str in H2.
+
+      assert (length (rev l) <= n)%nat.
+      rewrite rev_length. auto.
+      pose proof (path_len_iterated_marg (rev_marg marg) n d c k (rev l) H0 H2).
+      pose proof (iterated_marg_path (rev_marg marg) n k d c H3). auto. 
+      
+      intros H. 
+      destruct (path_iterated_marg (rev_marg marg) k d c H) as [n Hn].  
+      destruct (proj1 (iterated_marg_char (rev_marg marg) n d c k) Hn) as [l [H1 H2]].
+      apply iterated_marg_path with (n := length l).
+      apply path_len_iterated_marg with (l := rev l).
+      rewrite rev_length. lia. 
+      rewrite str_and_rev_str.
+      rewrite rev_involutive. auto.
+    Qed.
+    
+       (* for any two candidate c and d, if path strength between them is 
        M n marg c d, then it's equal M n (rev_marg marg) d c. *)
     Lemma connect_m_with_M :
       forall n c d marg, M marg n c d = M (rev_marg marg) n d c. 
     Proof.
       intros n c d marg.
-      repeat rewrite  M_M_new_equal. unfold rev_marg. 
-      revert d; revert c; revert n.
-      (* How to take advantage of the fact that 
-         rev_marg marg is same as marg except every entry 
-         is multiplied by -1 *)
+      repeat rewrite  M_M_new_equal. 
+    Admitted.
       
-    Admitted.     
 
-  
-    
       
       
     Lemma winner_reversed :
       forall marg, (exists d, c_wins marg d = false) -> (* there is loser *)
       forall c, c_wins marg c = true -> c_wins (rev_marg marg) c = false.
     Proof. 
-      intros marg [dlose Hdlose] c Hc.
-      rewrite c_wins_true in Hc. 
+      intros marg [dlose Hdlose] c Hc. 
       rewrite c_wins_false in Hdlose.
-      destruct Hdlose as [d Hdlose].
-      rewrite c_wins_false. 
-      (* c is offcourse beaten by dlose with respect to reverse 
-         margin *)
-      exists dlose.
-      (* c is winner wrt to marg. It means that 
-         M marg (length cand_all) dlose c < M marg (length cand_all) c dlose *)
-      assert (Ht : M marg (length cand_all) dlose c < M marg (length cand_all) c dlose).
-      pose proof (Hc d). 
-      pose proof (Zle_lt_or_eq _ _ H). 
-      (* We need to infer that M is transitive
-         M a b < M b a
-         M b c <= M c b
-        ===============
-        M a b < M c b *)
+      rewrite c_wins_true in Hc.
+      rewrite c_wins_false.
+      
+      pose proof (iterated_marg_loses_type marg dlose Hdlose) as H1.
+      pose proof (iterated_marg_wins_type marg c Hc) as H2.
+      pose proof (loses_type_prop _ _ H1).
+      unfold loses_prop in H.
+      pose proof (wins_type_prop _ _ H2).
+      unfold wins_prop in H0.
+       
+      destruct H as [k1 [d [Hp Hl]]].
+      destruct (H0 d) as [k2 [Hp1 Hp2]].
+      pose proof(path_concat marg c d dlose k2 k1 Hp1 Hp).
+      (* Path from c to dlose is of strenght Z.min k1 k2 *)
+      
+      apply  loses_prop_iterated_marg. 
+      unfold loses_prop. 
+      
+      
+      exists (Z.min k2 k1), dlose.
+      split. rewrite <-  path_with_rev_marg.
+      auto.
+
+      intros lz Hz.
+      rewrite <- path_with_rev_marg in Hz.
+      (* c is winner so from H Z.min k2 k1 > lz from Hz *) 
       
       
       
-      rewrite <- connect_m_with_M.
-      rewrite <- connect_m_with_M . 
-      auto. 
-
-
-
-
+      
 
       
     
