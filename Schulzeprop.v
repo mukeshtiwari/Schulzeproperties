@@ -41,7 +41,7 @@ Section Properties.
     (* prop-level path *)
     Inductive Path (k: Z) : cand -> cand -> Prop :=
     | unit c d : marg c d >= k -> Path k c d
-    | cons  c d e : marg c d >= k -> Path k d e -> Path k c e.
+    | cons  c d e : marg c d >= k -> Path k d e -> Path k c e. 
 
     (* winning condition of Schulze Voting *)
     Definition wins_prop (c: cand) := forall d: cand, exists k: Z,
@@ -123,7 +123,7 @@ Section Properties.
 
       (* unit path *)
       + intros Hin; specialize (Hcc (c, d) Hin); apply andb_true_iff in Hcc;
-          destruct Hcc as [Hccl Hccr]; apply Zlt_is_lt_bool in Hccl; simpl in Hccl;  omega.
+          destruct Hcc as [Hccl Hccr]. apply Zlt_is_lt_bool in Hccl. simpl in Hccl.  omega.
 
       (* non unit path *)
       + intros Hin; specialize (Hcc (c, e) Hin); apply andb_true_iff in Hcc;
@@ -133,6 +133,34 @@ Section Properties.
         specialize (Hmp d). destruct Hmp; [intuition | omega].
     Qed.
 
+    Lemma coclosed_path_bound :
+      forall k1 k2 f, k1 < k2 -> coclosed k1 f-> coclosed k2 f.
+    Proof.
+      intros k1 k2 f Hk Hf.
+      unfold coclosed in *.
+      intros x Hfx. unfold W in *.
+      destruct x as (c, d); cbn in *.
+      pose proof (Hf (c, d) Hfx).
+      apply andb_true_iff in H.
+      apply andb_true_iff.
+      destruct H as [H1 H2].
+      split.  unfold marg_lt in *.
+      cbn in *. Search (_ <? _ = true).
+      apply Z.ltb_lt in H1.
+      apply Z.ltb_lt. lia.
+      pose proof (proj1 (forallb_forall (fun m : cand => marg_lt k1 (fst (c, d), m) || f (m, snd (c, d)))
+                                 cand_all) H2).
+      apply forallb_forall. intros x Hx.
+      specialize (H x Hx). cbn in *.
+      unfold marg_lt in *. cbn in *.
+      apply orb_true_iff in H.
+      apply orb_true_iff.
+      destruct H. left. apply Z.ltb_lt in H.
+      apply Z.ltb_lt. lia.
+      right.  auto.
+    Qed.
+    
+      
 
     Definition listify (m : cand -> cand -> Z) :=
       map (fun s => (fst s, snd s, m (fst s) (snd s))) (all_pairs cand_all).
@@ -619,7 +647,7 @@ Section Properties.
       destruct HE as [d HE].
       remember (M (length cand_all) d c) as s. exists s, d.
       split. assert (H1 : M (length cand_all) d c >= s) by omega.
-      apply iterated_marg_patht in H1. auto.
+      apply iterated_marg_patht in H1. auto. 
       exists (fun x => M (length cand_all) (fst x) (snd x) <? s).
       simpl in *. split. apply Z.ltb_lt. omega.
       unfold coclosed. intros x; destruct x as (x, z); simpl in *.
@@ -970,25 +998,68 @@ Section Properties.
       
 
       
+    
+    Lemma path_strength :
+      forall c d marg k1 k2, c_wins marg c = true -> c_wins marg d = false -> Path marg k1 c d -> 
+                        Path marg k2 d c -> k2 < k1.
+    Proof.
+      intros c d marg k1 k2 Hcwin Hdlose Hcd Hdc.
       
+
+
+
+      (* C wins, d loses means the reverse path from d to c is less the d to c *)
+      pose proof (proj1 (c_wins_true marg c) Hcwin).
+      pose proof (proj1 (c_wins_false marg d) Hdlose).
+     
+      
+      pose proof (iterated_marg_wins_type marg c H).
+      unfold wins_type in X.
+      pose proof (iterated_marg_loses_type marg d H0).
+      unfold loses_type in X0.
+      destruct X0 as [k [dt [Hp [f [Hc Hd]]]]].
+      destruct (X dt) as [k3 [Hpt [ft [Hft Hct]]]]. 
+
+      
+
+      pose proof (coclosed_path marg).
+      (* Can I prove that f is K1 coclosed ?*) 
+      (* Path from d ----> dt < k and path from dt -----> c <= k2 
+         path from d ----> *)
+
+      pose proof (coclosed_path_bound marg k k1 f).
+      
+      assert (k < k1). admit.
+      specialize (H2 H3 Hd).
+
+      
+
+      
+      
+      intros x; destruct x as (x, z); simpl in *.
+      intros.  unfold W.
+      apply andb_true_iff. split. unfold marg_lt. simpl. apply Z.ltb_lt.
+      
+      
+        
     Lemma winner_reversed :
       forall marg, (exists d, c_wins marg d = false) -> (* there is loser *)
       forall c, c_wins marg c = true -> c_wins (rev_marg marg) c = false.
     Proof. 
-      intros marg [dlose Hdlose] c Hc. 
-      rewrite c_wins_false in Hdlose.
-      rewrite c_wins_true in Hc.
+      intros marg [dlose Hdlose] c Hc.
+      pose proof (proj1 (c_wins_false marg dlose) Hdlose).
+      pose proof (proj1 (c_wins_true marg c) Hc).
       rewrite c_wins_false.
       
-      pose proof (iterated_marg_loses_type marg dlose Hdlose) as H1.
-      pose proof (iterated_marg_wins_type marg c Hc) as H2.
+      pose proof (iterated_marg_loses_type marg dlose H) as H1.
+      pose proof (iterated_marg_wins_type marg c H0) as H2.
       pose proof (loses_type_prop _ _ H1).
-      unfold loses_prop in H.
+      unfold loses_prop in H3.
       pose proof (wins_type_prop _ _ H2).
-      unfold wins_prop in H0.
+      unfold wins_prop in H4.
        
-      destruct H as [k1 [d [Hp Hl]]].
-      destruct (H0 d) as [k2 [Hp1 Hp2]].
+      destruct H3 as [k1 [d [Hp Hl]]].
+      destruct (H4 d) as [k2 [Hp1 Hp2]].
       pose proof(path_concat marg c d dlose k2 k1 Hp1 Hp).
       (* Path from c to dlose is of strenght Z.min k1 k2 *)
       
@@ -1003,8 +1074,10 @@ Section Properties.
       intros lz Hz.
       rewrite <- path_with_rev_marg in Hz.
       (* c is winner so from H Z.min k2 k1 > lz from Hz *) 
-      
-      
+      pose proof (path_strength c dlose marg (Z.min k2 k1) lz Hc Hdlose H3 Hz).
+      auto.
+    Qed.
+    
       
       
 
