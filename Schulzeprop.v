@@ -113,7 +113,7 @@ Section Properties.
       apply orb_true_iff in Hp; destruct Hp as [Hpl | Hpr]; destruct x as (a, c); simpl in *.
       + right; apply Zlt_is_lt_bool; auto.
       + left;auto.
-    Qed.
+    Qed. 
 
     (* all elements (x, y) in a k-coclosed set can only be joined by a path of strenght < k *)
     Lemma coclosed_path : forall k f, coclosed k f -> forall s x y,
@@ -121,13 +121,13 @@ Section Properties.
     Proof.
       intros k f Hcc x s y p. induction p.
 
-      (* unit path *)
+      (* unit path *) 
       + intros Hin; specialize (Hcc (c, d) Hin); apply andb_true_iff in Hcc;
           destruct Hcc as [Hccl Hccr]. apply Zlt_is_lt_bool in Hccl. simpl in Hccl.  omega.
 
       (* non unit path *)
       + intros Hin; specialize (Hcc (c, e) Hin); apply andb_true_iff in Hcc;
-          destruct Hcc as [Hccl Hccr]; unfold marg_lt in Hccl; simpl in Hccl.
+          destruct Hcc as [Hccl Hccr]; unfold marg_lt in Hccl; simpl in Hccl.  
         assert (Hmp : forall m, f (m, (snd (c, e))) = true \/ marg (fst (c, e)) m < k)
           by (apply mp_log; auto); simpl in Hmp.
         specialize (Hmp d). destruct Hmp; [intuition | omega].
@@ -281,7 +281,7 @@ Section Properties.
        iterated margin function with value at least s *)
     Lemma path_iterated_marg : forall (s : Z) (c d : cand),
         Path s c d -> exists n, M n c d >= s.
-    Proof.
+    Proof. 
       intros s c d H.  induction H.
       exists 0%nat. unfold M. simpl. rewrite equivalent_m. auto. destruct IHPath.
       exists (S x). unfold M in *. simpl.  rewrite equivalent_m. apply z_max_lb. right.
@@ -420,7 +420,7 @@ Section Properties.
         rewrite app_length. rewrite app_length.
         simpl. rewrite app_length. simpl.
         omega. }
-      rewrite H9 in H10. rewrite H8 in H10.
+      rewrite H9 in H10. rewrite H8 in H10. 
       assert (((k' + n) < (p + n))%nat -> (k' < p)%nat) by omega.
       specialize (H11 H10). assert (k' < k)%nat by omega.
       specialize (H k' H12 n c d Hn).
@@ -861,6 +861,13 @@ Section Properties.
     (* Beginning of reversal symmetry *)
     (* We reverse the ballot. Reversing the ballot and computing 
        the margin is equlivalent to marg d c*)
+
+    (* Do I need a notion of Unique winner ? *)
+    (* Yes, I need to make sure that c is unique winner, so that it goes into 
+       loser category if margin is reversed *)
+    Definition unique_winner (marg : cand -> cand -> Z) (c : cand) :=
+      c_wins marg c = true /\ (forall d, d <> c -> c_wins marg d = false).
+    
     
     Definition rev_marg (marg : cand -> cand -> Z) (c d : cand) :=
       -marg c d. (* We multiply -1 to margin matrix *)
@@ -926,11 +933,7 @@ Section Properties.
         rewrite marg_and_rev_marg_add_zero.
         lia.
     Qed.
-    
-
-  
-    
-   
+       
       
 
     Lemma path_less :
@@ -996,56 +999,82 @@ Section Properties.
       repeat rewrite  M_M_new_equal. 
     Admitted.
       
-
+ 
       
-    
     Lemma path_strength :
       forall c d marg k1 k2, c_wins marg c = true -> c_wins marg d = false -> Path marg k1 c d -> 
                         Path marg k2 d c -> k2 < k1.
     Proof.
       intros c d marg k1 k2 Hcwin Hdlose Hcd Hdc.
-      
-
-
-
-      (* C wins, d loses means the reverse path from d to c is less the d to c *)
       pose proof (proj1 (c_wins_true marg c) Hcwin).
       pose proof (proj1 (c_wins_false marg d) Hdlose).
-     
       
       pose proof (iterated_marg_wins_type marg c H).
       unfold wins_type in X.
       pose proof (iterated_marg_loses_type marg d H0).
-      unfold loses_type in X0.
+      unfold loses_type in X0. 
       destruct X0 as [k [dt [Hp [f [Hc Hd]]]]].
-      destruct (X dt) as [k3 [Hpt [ft [Hft Hct]]]]. 
-
+      destruct (X dt) as [k3 [Hpt [ft [Hft Hct]]]].  
+      clear X. 
+      apply path_equivalence in Hp.
+      apply path_equivalence in Hpt.  
+      pose proof (coclosed_path marg). 
+      (* {k < k3 + 1} + {k = k3 + 1} + {k > k3 + 1}*)
+      (* case 1. k < k3 + 1
+         
+         it mean f and ft both are (k3 + 1) coclosed. go for ft.
+         case 2. k = k3 + 2. same as 1. go for any
+         case 3. k > k3 + 1. go for f. *)
+      destruct (Ztrichotomy_inf k (k3 + 1)) as [[Hlt | Heq] | Hgt].
+      pose proof (coclosed_path_bound marg k (k3 + 1) f Hlt Hd).
+   
       
-
-      pose proof (coclosed_path marg).
       (* Can I prove that f is K1 coclosed ?*) 
       (* Path from d ----> dt < k and path from dt -----> c <= k2 
          path from d ----> *)
-
-      pose proof (coclosed_path_bound marg k k1 f).
       
-      assert (k < k1). admit.
-      specialize (H2 H3 Hd).
-
-      
-
-      
-      
-      intros x; destruct x as (x, z); simpl in *.
-      intros.  unfold W.
-      apply andb_true_iff. split. unfold marg_lt. simpl. apply Z.ltb_lt.
-      
+    Admitted.
+                  
       
         
-    Lemma winner_reversed :
-      forall marg, (exists d, c_wins marg d = false) -> (* there is loser *)
-      forall c, c_wins marg c = true -> c_wins (rev_marg marg) c = false.
-    Proof. 
+   Lemma winner_reversed :
+     forall marg c, unique_winner marg c ->
+               (exists d, c_wins marg d = false /\ c <> d) ->
+               c_wins (rev_marg marg) c = false.
+   Proof.
+     intros marg c [H1 H2] [dlose [Hdlose Hcd]].
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     (*
+     
       intros marg [dlose Hdlose] c Hc.
       pose proof (proj1 (c_wins_false marg dlose) Hdlose).
       pose proof (proj1 (c_wins_true marg c) Hc).
@@ -1077,35 +1106,30 @@ Section Properties.
       pose proof (path_strength c dlose marg (Z.min k2 k1) lz Hc Hdlose H3 Hz).
       auto.
     Qed.
-    
       
-      
-
-      
-    
-    (* Do I need a notion of Unique winner ? *)
-    (* Yes, I need to make sure that c is unique winner, so that it goes into 
-       loser category if margin is reversed *)
-    Definition unique_winner (c : cand) (marg : cand -> cand -> Z) :=
-      forall d : cand, M marg (length cand_all) d c < M marg (length cand_all) c d.
-    (*
-      c_wins marg c = true /\ (forall d, d <> c -> c_wins marg d = false).
-     *)
-
-
+     
       
       
     (* If c is winner with respect to marg, then c loses with respect to rev_marg *)
-    Lemma winner_reversed :
+    Lemma winner_revsersed_t :
       forall c (marg : cand -> cand -> Z), unique_winner c marg -> c_wins (rev_marg marg) c = false.
     Proof.
       unfold unique_winner.
-      intros c marg H.
-      eapply c_wins_false.
-      exists c. specialize (H c).
-      rewrite connect_m_with_M in H.
+      intros c marg [H1 H2].
+      apply c_wins_false.
+      pose proof (proj1 (c_wins_true marg c) H1).
+      
+
+      
+
+      
+      e
+        c_wins_true in H1. 
+      
+      exists c
+      rewrite <- connect_m_with_M.
       auto. 
-    Qed.
+    Qed. *)
     
 
       
