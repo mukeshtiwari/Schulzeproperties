@@ -1034,20 +1034,60 @@ Section Properties.
          path from d ----> *)
       
     Admitted.
-                  
+
+    
+    Lemma transitivity_M :
+      forall n a b c s1 s2 marg, M marg n a b > s1 -> M marg n b c >= s2  ->  M marg n a c >= Z.min s1 s2. 
+    Proof.
+      intros.
+      assert (M marg n a b >= s1) by lia.
+      pose proof (iterated_marg_path marg n s1 a b H1).
+      pose proof (iterated_marg_path marg n s2 b c H0).
+      pose proof (path_concat).
       
-        
-   Lemma winner_reversed :
-     forall marg c, unique_winner marg c ->
+      
+    Admitted.
+      
+    
+    Lemma winner_reversed :
+      forall marg c, unique_winner marg c ->
                (exists d, c_wins marg d = false /\ c <> d) ->
                c_wins (rev_marg marg) c = false.
-   Proof.
-     intros marg c [H1 H2] [dlose [Hdlose Hcd]].
-     
+    Proof.
+      intros marg c [H1 H2] [dlose [Hdlose Hcd]].
+      pose proof (proj1 (c_wins_false marg dlose) Hdlose).   
+      pose proof (proj1 (c_wins_true marg c) H1).
+      rewrite c_wins_false.
+      
+      pose proof (iterated_marg_loses_type marg dlose H) as H3.
+      pose proof (iterated_marg_wins_type marg c H0) as H4.
+      pose proof (loses_type_prop _ _ H3).
+      unfold loses_prop in H5.
+      pose proof (wins_type_prop _ _ H4).
+      unfold wins_prop in H6.
+      apply  loses_prop_iterated_marg.
+      unfold loses_prop.
 
+      destruct H5 as [k1 [d [Hp Hl]]].
+      destruct (dec_cand c d) as [Hc1 | Hc2].
+      (* case where c beats dlose directly *)
+      exists k1, dlose. split. rewrite <- path_with_rev_marg. 
+      rewrite <- Hc1 in Hp. assumption.
+      intros l Hpl.
+      rewrite <- path_with_rev_marg in Hpl.
+      apply Hl. subst.  auto.
 
-
-
+      (* c does not beat dlost directly. But it beats via some 
+         intermediate candidate *)
+      clear H; clear H0.
+      (* we know that d does not win by hypothesis H2. It might be beaten be some 
+         intermediate candidate d' *)
+      apply not_eq_sym in Hc2.
+      pose proof (H2 d Hc2).
+      (* by hypothesis H, we know that d loses *)
+      (* Since c is unique winner. All the path going towards c is 
+         weaker than paths coming from c *)
+      
 
 
 
