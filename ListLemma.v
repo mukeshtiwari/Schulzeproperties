@@ -200,8 +200,8 @@ Qed.
 Lemma max_of_nonempty_list :
   forall (A : Type) (l : list A) (H : l <> nil) (H1 : forall x y : A, {x = y} + {x <> y}) (s : Z) (f : A -> Z),
     maxlist (map f l) >= s <-> exists (x:A), In x l /\ f x >= s.
-Proof. 
-  split; intros. generalize dependent l.
+Proof.  
+  split; intros. generalize dependent l.  
   induction l; intros. specialize (H eq_refl). inversion H.
   pose proof (list_eq_dec H1 l []).
   destruct H2. exists a. rewrite e. intuition. rewrite e in H0.
@@ -215,7 +215,7 @@ Proof.
     rewrite l2. simpl. auto. }
   pose proof (Z.ge_le _ _ g). pose proof (Z.max_l _ _ H3).
   rewrite H2 in H0. rewrite H4 in H0. exists a. intuition.
-  rewrite map_cons in H0. pose proof (exists_last n). destruct X as [l1 [x l2]].
+  rewrite map_cons in H0. pose proof (exists_last n). destruct X as [l1 [x l2]]. 
   assert (maxlist (f a :: map f l) = Z.max (f a) (maxlist (map f l))).
   { destruct l1. simpl in l2. rewrite l2. simpl. auto.
     rewrite l2. simpl. auto. }
@@ -240,6 +240,40 @@ Proof.
   destruct H2. subst. assumption. specialize (IHl n H2).
   pose proof (proj1 (Z.compare_gt_iff _ _) Ht).  omega.
 Qed.
+
+Lemma max_of_nonempty_list_equal :
+  forall (A : Type) (l : list A) (H : l <> nil) (H1 : forall x y : A, {x = y} + {x <> y}) (s : Z) (f : A -> Z),
+    maxlist (map f l) = s -> exists (x:A), In x l /\ f x = s.
+Proof. 
+  intros ?.
+  induction l. 
+  + intros. intuition.
+  + intros.
+    destruct l.
+    simpl in *. exists a. auto.
+
+    assert (a0 :: l <> []).
+    intuition. inversion H2.
+    remember (a0 :: l) as l1.
+    rewrite map_cons in H0.
+    assert (maxlist (f a :: map f l1) = Z.max (f a) (maxlist (map f l1))).
+    destruct l1. intuition. auto.
+
+    rewrite H0 in H3. symmetry in H3.
+    assert (Hm : {f a >= maxlist (map f l1)} + {f a < maxlist (map f l1)}) by
+      apply (Z_ge_lt_dec (f a) (maxlist (map f l1))).
+    destruct Hm.  Search Z.max.
+    pose proof (Zmax_left _ _ g).
+    rewrite H4 in H3. exists a. intuition.
+    pose proof (max_two_integer (f a) (maxlist (map f l1)) l0).
+    rewrite H4 in H3.
+    pose proof (IHl H2 H1 s f H3).
+    destruct H5.  exists x. split.
+    simpl. right. intuition. intuition.       
+Qed.
+
+    
+    
 
 (* minimum of two integers m and n is >= s then both numbers are
    >= s *)

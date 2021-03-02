@@ -337,9 +337,9 @@ Section Properties.
       split. generalize dependent s. generalize dependent d.
       generalize dependent c. induction k. simpl. intros. exists []. simpl. intuition.
       unfold M in *. simpl in H. rewrite equivalent_m in H. auto.
-
+ 
       simpl. intros. unfold M in *. simpl in H.
-
+      
       rewrite equivalent_m in H.  pose proof (proj1 (z_max_lb (M k c d) _ s) H).
       destruct H0.
       specialize (IHk c d s H0). destruct IHk as [l [H1 H2]]. exists l. omega. clear H.
@@ -389,19 +389,24 @@ Section Properties.
        number of candidates. *)
     Lemma iterated_marg_stabilises: forall k n c d (Hn: (length cand_all = n)%nat),
         M (k + n) c d <= M n  c d.
-    Proof.
-      induction k using (well_founded_induction lt_wf). intros n c d Hn.
+    Proof.   
+      induction k using (well_founded_induction lt_wf). 
+      intros n c d Hn.
       remember (M (k + n) c d) as s.
-      pose proof (Z.eq_le_incl _ _ Heqs). apply Z.le_ge in H0.
-      pose proof (proj1 (iterated_marg_char _ _ _ _) H0). destruct H1 as [l [H1 H2]].
+      pose proof (Z.eq_le_incl _ _ Heqs).
+      apply Z.le_ge in H0. 
+      pose proof (proj1 (iterated_marg_char _ _ _ _) H0).
+      destruct H1 as [l [H1 H2]].
       (* number of candidates <= length Evote.cand_all \/ > length Evote.cand_all *)
-      assert ((length l <= n)%nat \/ (length l > n)%nat) by omega.
+      assert ((length l <= n)%nat \/ (length l > n)%nat) by lia.
       destruct H3 as [H3 | H3].
       pose proof (proj2 (iterated_marg_char n c d s)
-                        (ex_intro (fun l => (length l <= n)%nat /\ str c l d >= s) l (conj H3 H2))). omega.
+                        (ex_intro (fun l => (length l <= n)%nat /\ str c l d >= s) l (conj H3 H2))).
+      lia. 
       (* length l > length Evote.cand_all and there are candidates. Remove the duplicate
          candidate *)
-      rewrite <- Hn in H3. assert (covers cand cand_all l).
+      rewrite <- Hn in H3.
+      assert (covers cand cand_all l).
       { unfold covers. intros. pose proof (cand_fin x). assumption. }
       pose proof (list_split_dup_elem _ n cand_all dec_cand Hn l H3 H4).
       destruct H5 as [a [l1 [l2 [l3 H5]]]].
@@ -411,7 +416,7 @@ Section Properties.
       destruct H7.
       pose proof (iterated_marg_char n c d s). destruct H8.
       assert ((exists l : list cand, (length l <= n)%nat /\ str c l d >= s)).
-      exists l0. intuition. specialize (H9 H10).  omega.
+      exists l0. intuition. specialize (H9 H10).  lia.
       rewrite Hn in H3.
       specialize (list_and_num _ _ _ H3); intros. destruct H8 as [p H8].
       specialize (list_and_num _ _ _ H7); intros. destruct H9 as [k' H9].
@@ -428,7 +433,8 @@ Section Properties.
       destruct H13.
       assert ((exists l : list cand, (length l <= length l0)%nat /\ str c l d >= str c l0 d)).
       { exists l0. omega. }
-      specialize (H14 H15). clear H13. rewrite <- H9 in H. omega.
+      specialize (H14 H15). clear H13. rewrite <- H9 in H.
+      lia. 
     Qed.
 
     (* the iterated margin function reaches a fixpoint after n iterations, where
@@ -738,10 +744,9 @@ Section Properties.
 
   (* Start of properties. Move it other module *)
   Section Propt.
-
-    (* Make marg explicity *)
    
-    Hypothesis marg_neq : forall c d (marg : cand -> cand -> Z), marg c d = -marg d c. 
+    Hypothesis marg_neq :
+      forall (c d : cand) (marg : cand -> cand -> Z), marg c d = -marg d c. 
   
     Lemma marg_dec : forall (a b : Z), {a <= b} + {b <= a}.
     Proof.
@@ -841,19 +846,7 @@ Section Properties.
     (* End of condercet property *)
 
 
-   
-
-    (* Alternative definition of condercet which implies unique winner *)
-    (* Definition condercet_winner (c : cand) (marg : cand -> cand -> Z) :=
-           forall d, marg c d > 0 ? *)
-
-     (* Definition unique_winner (c : cand) (marg cand -> cand -> Z) := 
-          forall d, M (length cand_all) marg d c < M (length cand_all) c d *)
-    (* prove the lemma that condercet <-> unique_winner *)
-
-    (*End of Alternative definition *)
-
-
+  
 
 
 
@@ -862,9 +855,7 @@ Section Properties.
     (* We reverse the ballot. Reversing the ballot and computing 
        the margin is equlivalent to marg d c*)
 
-    (* Do I need a notion of Unique winner ? *)
-    (* Yes, I need to make sure that c is unique winner, so that it goes into 
-       loser category if margin is reversed *)
+    (* Notion of Unique Winner *)
     Definition unique_winner (marg : cand -> cand -> Z) (c : cand) :=
       c_wins marg c = true /\ (forall d, d <> c -> c_wins marg d = false).
     
@@ -988,189 +979,32 @@ Section Properties.
       rewrite rev_length. lia. 
       rewrite str_and_rev_str.
       rewrite rev_involutive. auto.
-    Qed.
-    
-       (* for any two candidate c and d, if path strength between them is 
-       M n marg c d, then it's equal M n (rev_marg marg) d c. *)
-    Lemma connect_m_with_M :
-      forall n c d marg, M marg n c d = M (rev_marg marg) n d c. 
-    Proof.
-      intros n c d marg.
-      repeat rewrite  M_M_new_equal. 
-    Admitted.
+    Qed.    
+  
+           
       
- 
-      
-    Lemma path_strength :
-      forall c d marg k1 k2, c_wins marg c = true -> c_wins marg d = false -> Path marg k1 c d -> 
-                        Path marg k2 d c -> k2 < k1.
-    Proof.
-      intros c d marg k1 k2 Hcwin Hdlose Hcd Hdc.
-      pose proof (proj1 (c_wins_true marg c) Hcwin).
-      pose proof (proj1 (c_wins_false marg d) Hdlose).
-      
-      pose proof (iterated_marg_wins_type marg c H).
-      unfold wins_type in X.
-      pose proof (iterated_marg_loses_type marg d H0).
-      unfold loses_type in X0. 
-      destruct X0 as [k [dt [Hp [f [Hc Hd]]]]].
-      destruct (X dt) as [k3 [Hpt [ft [Hft Hct]]]].  
-      clear X. 
-      apply path_equivalence in Hp.
-      apply path_equivalence in Hpt.  
-      pose proof (coclosed_path marg). 
-      (* {k < k3 + 1} + {k = k3 + 1} + {k > k3 + 1}*)
-      (* case 1. k < k3 + 1
-         
-         it mean f and ft both are (k3 + 1) coclosed. go for ft.
-         case 2. k = k3 + 2. same as 1. go for any
-         case 3. k > k3 + 1. go for f. *)
-      destruct (Ztrichotomy_inf k (k3 + 1)) as [[Hlt | Heq] | Hgt].
-      pose proof (coclosed_path_bound marg k (k3 + 1) f Hlt Hd).
-   
-      
-      (* Can I prove that f is K1 coclosed ?*) 
-      (* Path from d ----> dt < k and path from dt -----> c <= k2 
-         path from d ----> *)
-      
-    Admitted.
-
-    
-    Lemma transitivity_M :
-      forall n a b c s1 s2 marg, M marg n a b > s1 -> M marg n b c >= s2  ->  M marg n a c >= Z.min s1 s2. 
-    Proof.
-      intros.
-      assert (M marg n a b >= s1) by lia.
-      pose proof (iterated_marg_path marg n s1 a b H1).
-      pose proof (iterated_marg_path marg n s2 b c H0).
-      pose proof (path_concat).
-      
-      
-    Admitted.
-      
-    
+     
     Lemma winner_reversed :
       forall marg c, unique_winner marg c ->
                (exists d, c_wins marg d = false /\ c <> d) ->
                c_wins (rev_marg marg) c = false.
     Proof.
-      intros marg c [H1 H2] [dlose [Hdlose Hcd]].
-      pose proof (proj1 (c_wins_false marg dlose) Hdlose).   
-      pose proof (proj1 (c_wins_true marg c) H1).
+      intros ? ? Hu Hd.
+      unfold unique_winner in Hu.
+      destruct Hu as [Hu1 Hu2].
+      destruct Hd as [d [Hc Hd]]. 
       rewrite c_wins_false.
+      rewrite c_wins_false in Hc.
+      rewrite c_wins_true in Hu1. 
       
-      pose proof (iterated_marg_loses_type marg dlose H) as H3.
-      pose proof (iterated_marg_wins_type marg c H0) as H4.
-      pose proof (loses_type_prop _ _ H3).
-      unfold loses_prop in H5.
-      pose proof (wins_type_prop _ _ H4).
-      unfold wins_prop in H6.
-      apply  loses_prop_iterated_marg.
-      unfold loses_prop.
-
-      destruct H5 as [k1 [d [Hp Hl]]].
-      destruct (dec_cand c d) as [Hc1 | Hc2].
-      (* case where c beats dlose directly *)
-      exists k1, dlose. split. rewrite <- path_with_rev_marg. 
-      rewrite <- Hc1 in Hp. assumption.
-      intros l Hpl.
-      rewrite <- path_with_rev_marg in Hpl.
-      apply Hl. subst.  auto.
-
-      (* c does not beat dlost directly. But it beats via some 
-         intermediate candidate *)
-      clear H; clear H0.
-      (* we know that d does not win by hypothesis H2. It might be beaten be some 
-         intermediate candidate d' *)
-      apply not_eq_sym in Hc2.
-      pose proof (H2 d Hc2).
-      (* by hypothesis H, we know that d loses *)
-      (* Since c is unique winner. All the path going towards c is 
-         weaker than paths coming from c *)
-      
+    Admitted.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-     (*
-     
-      intros marg [dlose Hdlose] c Hc.
-      pose proof (proj1 (c_wins_false marg dlose) Hdlose).
-      pose proof (proj1 (c_wins_true marg c) Hc).
-      rewrite c_wins_false.
-      
-      pose proof (iterated_marg_loses_type marg dlose H) as H1.
-      pose proof (iterated_marg_wins_type marg c H0) as H2.
-      pose proof (loses_type_prop _ _ H1).
-      unfold loses_prop in H3.
-      pose proof (wins_type_prop _ _ H2).
-      unfold wins_prop in H4.
-       
-      destruct H3 as [k1 [d [Hp Hl]]].
-      destruct (H4 d) as [k2 [Hp1 Hp2]].
-      pose proof(path_concat marg c d dlose k2 k1 Hp1 Hp).
-      (* Path from c to dlose is of strenght Z.min k1 k2 *)
-      
-      apply  loses_prop_iterated_marg. 
-      unfold loses_prop. 
+    (* Monotonicity *)
+    (* we need to prove that margin would remain same in both cases, 
+       the old ballot and the modified one. *)
       
       
-      exists (Z.min k2 k1), dlose.
-      split. rewrite <-  path_with_rev_marg.
-      auto.
-
-      intros lz Hz.
-      rewrite <- path_with_rev_marg in Hz.
-      (* c is winner so from H Z.min k2 k1 > lz from Hz *) 
-      pose proof (path_strength c dlose marg (Z.min k2 k1) lz Hc Hdlose H3 Hz).
-      auto.
-    Qed.
-      
-     
-      
-      
-    (* If c is winner with respect to marg, then c loses with respect to rev_marg *)
-    Lemma winner_revsersed_t :
-      forall c (marg : cand -> cand -> Z), unique_winner c marg -> c_wins (rev_marg marg) c = false.
-    Proof.
-      unfold unique_winner.
-      intros c marg [H1 H2].
-      apply c_wins_false.
-      pose proof (proj1 (c_wins_true marg c) H1).
-      
-
-      
-
-      
-      e
-        c_wins_true in H1. 
-      
-      exists c
-      rewrite <- connect_m_with_M.
-      auto. 
-    Qed. *)
-    
 
       
     
