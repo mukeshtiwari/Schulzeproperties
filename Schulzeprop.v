@@ -50,7 +50,7 @@ Section Properties.
     (* dually, the notion of not winning: *)
     Definition loses_prop (c : cand) := exists k: Z, exists  d: cand,
           Path k d c /\ (forall l, Path l c d -> l < k).
-
+ 
     (** Section 3: A Scrutiny Sheet for the Schulze Method **)
 
     (* boolean function that determines whether the margin between a
@@ -261,8 +261,8 @@ Section Properties.
                               ?= maxlist (map (fun x : cand => Z.min (marg c x) (linear_search x d (MM n))) cand_all)).
       apply IHn. auto.
       apply max_of_nonempty_list_type in H. destruct H as [x [H1 H2]].
-      apply z_min_lb in H2. destruct H2.
-      specialize (IHn _ _ _ H0). specialize (consT _ _ _ _ H IHn); auto.
+      apply z_min_lb in H2. destruct H2. 
+      specialize (IHn _ _ _ H0).  specialize (consT _ _ _ _ H IHn); auto.
       apply cand_not_nil.  apply dec_cand. apply IHn. assumption.
     Defined.
 
@@ -312,23 +312,24 @@ Section Properties.
     Lemma path_len_iterated_marg : forall k c d s l,
         (length l <= k)%nat -> str c l d >= s -> M k c d >= s.
     Proof.
-      induction k. intros. assert ((length l <= 0)%nat -> l = []).
+      induction k.  intros. assert ((length l <= 0)%nat -> l = []).
       { destruct l. intros. reflexivity.
-        simpl in *. inversion H. }
+        simpl in *. inversion H. }  
       specialize (H1 H). subst. simpl in *. unfold M in *. simpl. rewrite equivalent_m. auto.
       intros. simpl in *. destruct l. simpl in *.
       unfold M in *. simpl.
 
-      rewrite equivalent_m. apply z_max_lb.
+      rewrite equivalent_m. apply z_max_lb.  
       left. apply IHk with []. simpl. omega. simpl. auto.
       simpl in *. apply z_min_lb in H0. destruct H0.
-      unfold M in *.  simpl.
+      unfold M in *.  simpl. 
       rewrite equivalent_m.
       apply z_max_lb. right. apply max_of_nonempty_list.
       apply cand_not_nil. apply dec_cand. exists c0. split. specialize (cand_fin c0). trivial.
       apply z_min_lb. split.
       omega. apply IHk with l. omega. omega.
     Qed.
+    
 
     (* characterisation of the iterated margin function in terms of paths *)
     Lemma iterated_marg_char: forall k c d s,
@@ -455,6 +456,7 @@ Section Properties.
       subst. apply  iterated_marg_stabilises. auto.
     Qed.
 
+    
     (* boolean valued function that determines election winners based on the
        (fixpoint of the) iterated margin function *)
     Definition c_wins c :=
@@ -757,7 +759,7 @@ Section Properties.
       right; lia.
     Qed.
 
-    
+    Print M_old.
     
     Definition condercet_winner (c : cand) (marg : cand -> cand -> Z) :=
       forall d, marg c d >= 0.
@@ -765,7 +767,7 @@ Section Properties.
     Lemma gen_marg_gt0 :
       forall c d n marg, condercet_winner c marg -> M marg n c d >= 0.
     Proof. 
-      unfold condercet_winner.
+      unfold condercet_winner. 
       intros c d n marg Hc.
       rewrite M_M_new_equal. 
       revert d; revert n.
@@ -777,7 +779,7 @@ Section Properties.
     Lemma gen_marg_lt0 :
       forall c d n marg , condercet_winner c marg -> M marg n d c <= 0.
     Proof.
-      unfold condercet_winner.
+      unfold condercet_winner. 
       intros c d n marg Hc.
       rewrite M_M_new_equal.
       revert d; revert n.
@@ -980,25 +982,33 @@ Section Properties.
       rewrite str_and_rev_str.
       rewrite rev_involutive. auto.
     Qed.    
-  
+
+    
            
-      
+  
      
     Lemma winner_reversed :
       forall marg c, unique_winner marg c ->
                (exists d, c_wins marg d = false /\ c <> d) ->
                c_wins (rev_marg marg) c = false.
     Proof.
+
+      
       intros ? ? Hu Hd.
       unfold unique_winner in Hu.
       destruct Hu as [Hu1 Hu2].
-      destruct Hd as [d [Hc Hd]]. 
-      rewrite c_wins_false.
-      rewrite c_wins_false in Hc.
-      rewrite c_wins_true in Hu1. 
+      destruct Hd as [d [Hc Hd]].
+      apply c_wins_prop in Hu1.
+      apply c_loses_prop in Hc.
+      apply c_loses_prop.
+      unfold wins_prop in Hu1.
+      unfold loses_prop in Hc.
+      destruct Hc as [k [e [Hp Hq]]].
+      unfold loses_prop.
+      pose proof (Hu1 e).
+      destruct H as [k0 [Hce Hec]].
       
-    Admitted.
-
+      
 
     (* Monotonicity *)
     (* we need to prove that margin would remain same in both cases, 
