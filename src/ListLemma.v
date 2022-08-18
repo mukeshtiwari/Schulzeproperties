@@ -31,7 +31,6 @@ Fixpoint all_pairs_row_t {A : Type} (l1 : list A) (l2 : list A) : list (A * A) :
   end.
 
 
-
 Lemma row_t_correctness :
   forall (A : Type) (a1 a2 : A) (l1 l2 : list A),
     In a1 l1 -> In a2 l2 -> In (a1, a2) (all_pairs_row_t l1 l2). 
@@ -64,7 +63,7 @@ Fixpoint all_pairs_col_t {A : Type} (l1 : list A) (l2 : list A) : list (A * A) :
       map (fun x => (x, c)) l2 ++ all_pairs_col_t cs l2
   end.
 
-
+ 
 
 
 Lemma col_t_correctness :
