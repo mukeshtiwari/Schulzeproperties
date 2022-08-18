@@ -1,9 +1,8 @@
-Require Import Notations.
 Require Import Coq.Lists.List.
 Require Import Coq.Arith.Le.
 Require Import Coq.Numbers.Natural.Peano.NPeano.
 Require Import Coq.Arith.Compare_dec.
-Require Import Coq.omega.Omega.
+Require Import Psatz.
 Require Import Bool.Sumbool.
 Require Import Bool.Bool.
 Require Import Coq.Logic.ConstructiveEpsilon.
@@ -11,14 +10,16 @@ Require Import Coq.ZArith.ZArith.
 Import ListNotations.
 Open Scope Z.
 Require Import
-        Program Morphisms Relations RelationClasses Permutation.
-
+  Program Morphisms 
+  Relations RelationClasses 
+  Permutation.
 
 
 Notation "'existsT' x .. y , p" :=
   (sigT (fun x => .. (sigT (fun y => p)) ..))
     (at level 200, x binder, right associativity,
      format "'[' 'existsT' '/ ' x .. y , '/ ' p ']'") : type_scope.
+
 
 
 
@@ -29,7 +30,7 @@ Fixpoint all_pairs_row_t {A : Type} (l1 : list A) (l2 : list A) : list (A * A) :
     map (fun x => (c, x)) l2 ++ all_pairs_row_t cs l2
   end.
 
-Eval compute in all_pairs_row_t [1;2;3] [4].
+
 
 Lemma row_t_correctness :
   forall (A : Type) (a1 a2 : A) (l1 l2 : list A),
@@ -63,7 +64,7 @@ Fixpoint all_pairs_col_t {A : Type} (l1 : list A) (l2 : list A) : list (A * A) :
       map (fun x => (x, c)) l2 ++ all_pairs_col_t cs l2
   end.
 
-Eval compute in all_pairs_col_t [1;2;3] [4].
+
 
 
 Lemma col_t_correctness :
@@ -135,7 +136,7 @@ Proof.
   simpl. apply f_equal. repeat (rewrite app_length).
   repeat (rewrite map_length). rewrite IHl.
   remember (length l) as n. rewrite Nat.mul_succ_r.
-  omega.
+  nia.
 Qed.
 
 Theorem length_all_pairs_t_row :
@@ -192,7 +193,7 @@ Fixpoint maxlist (l : list Z) : Z :=
    proof that maximum of m and n is n *)
 Lemma max_two_integer : forall (m n : Z), m < n -> Z.max m n = n.
 Proof.
-  intros m n H; apply Z.max_r; omega.
+  intros m n H; apply Z.max_r; nia.
 Qed.
 
 (* Shows the prop level existence of element x in list l >=  s if maximum element of
@@ -235,10 +236,10 @@ Proof.
   destruct H2. subst. auto. pose proof (proj1 (Z.compare_eq_iff _ _) Ht).
   specialize (IHl n H2). rewrite H5. auto.
   destruct H2. subst.
-  pose proof (proj1 (Z.compare_lt_iff _ _) Ht). omega.
+  pose proof (proj1 (Z.compare_lt_iff _ _) Ht). nia.
   apply IHl. assumption. assumption.
   destruct H2. subst. assumption. specialize (IHl n H2).
-  pose proof (proj1 (Z.compare_gt_iff _ _) Ht).  omega.
+  pose proof (proj1 (Z.compare_gt_iff _ _) Ht).  nia.
 Qed.
 
 Lemma max_of_nonempty_list_equal :
@@ -262,7 +263,7 @@ Proof.
     rewrite H0 in H3. symmetry in H3.
     assert (Hm : {f a >= maxlist (map f l1)} + {f a < maxlist (map f l1)}) by
       apply (Z_ge_lt_dec (f a) (maxlist (map f l1))).
-    destruct Hm.  Search Z.max.
+    destruct Hm. 
     pose proof (Zmax_left _ _ g).
     rewrite H4 in H3. exists a. intuition.
     pose proof (max_two_integer (f a) (maxlist (map f l1)) l0).
@@ -328,11 +329,11 @@ Proof.
   pose proof (H2 l0 (in_eq l0 ls)).
   pose proof (in_split l0 c H4). destruct H5 as [l1 [l2 H5]].
   rewrite H5 in H. rewrite app_length in H. simpl in H.
-  assert (Ht : (length l1 + S (length l2))%nat = (S (length l1 + length l2))%nat) by omega.
+  assert (Ht : (length l1 + S (length l2))%nat = (S (length l1 + length l2))%nat) by nia.
   rewrite Ht in H. clear Ht. inversion H. clear H.
   rewrite <- app_length in H7.
   assert ((length ls > length (l1 ++ l2))%nat).
-  { rewrite H7. rewrite H3 in H0. simpl in H0. omega. }
+  { rewrite H7. rewrite H3 in H0. simpl in H0. nia. }
   specialize (IHn (l1 ++ l2) H1 H7 ls H).
   assert (covers A (l1 ++ l2) ls).
   { unfold covers. intros x Hin.
@@ -354,10 +355,10 @@ Proof.
   split; intros. unfold Z.max in H. destruct (m ?= n) eqn : Ht.
   left. auto. right. auto. left. auto.
   destruct H. unfold Z.max. destruct (m ?= n) eqn: Ht.
-  auto. pose proof (proj1 (Z.compare_lt_iff _ _) Ht). omega. omega.
+  auto. pose proof (proj1 (Z.compare_lt_iff _ _) Ht). nia. nia.
   unfold Z.max. destruct (m ?= n) eqn:Ht.
-  pose proof (proj1 (Z.compare_eq_iff _ _) Ht). omega.
-  omega. pose proof (proj1 (Z.compare_gt_iff _ _) Ht). omega.
+  pose proof (proj1 (Z.compare_eq_iff _ _) Ht). nia.
+  nia. pose proof (proj1 (Z.compare_gt_iff _ _) Ht). nia.
 Qed.
 
 (* if length of list l is > n then there is a natural number
@@ -367,7 +368,7 @@ Lemma list_and_num : forall (A : Type) (n : nat) (l : list A),
 Proof.
   intros A n l H. induction l. inversion H.
   simpl in *. apply gt_S in H. destruct H. specialize (IHl H). destruct IHl as [p IHl].
-  exists (S p). omega. exists 1%nat. omega.
+  exists (S p). nia. exists 1%nat. nia.
 Qed.
 
 (* if forallb f l returns false then existance of element x in list l
@@ -438,12 +439,14 @@ Proof.
     rewrite Ht.  apply IHl. intro. congruence.
     intros x Hx. firstorder.
 Qed.
-        
+    
+
 (*  Shows the type level existence of element x in list l >=  s if maximum element of
    list l >= s *)
 Lemma max_of_nonempty_list_type :
   forall (A : Type) (l : list A) (H : l <> nil) (H1 : forall x y : A, {x = y} + {x <> y})
-    (s : Z) (f : A -> Z), maxlist (map f l) >= s -> existsT (x:A), In x l /\ f x >= s.
+    (s : Z) (f : A -> Z), maxlist (map f l) >= s -> 
+    existsT (x:A), In x l /\ f x >= s.
 Proof.
   intros A.
   assert (Hm : forall (a b : A) (l : list A) (f : A -> Z),
@@ -472,9 +475,7 @@ Proof.
   rewrite map_cons in H3. rewrite Hm in H3.
   apply Z.ge_le in e. pose proof (Z.max_l _ _ e) as Hmx.
   rewrite Hmx in H3.
-  exists h. intuition.
-
-  
+  exists h. intuition.  
   rewrite map_cons in H3. rewrite Hm in H3.
   pose proof (max_two_integer _ _ r) as Hmx.
   rewrite Hmx in H3.
@@ -559,16 +560,7 @@ Proof with auto.
   apply H. simpl. right. auto.
 Qed.
 
-(*
-Lemma not_equal_elem : forall (A : Type) (a x : A) (l : list A),
-    In a l -> ~ In x l -> x <> a.
-Proof.
-  intros A a x l H1 H2.
-  induction l. inversion H1.
-  specialize (proj1 (not_in_cons x a0 l) H2); intros.
-  simpl in H1. destruct H as [H3 H4]. destruct H1.
-  subst. assumption. apply IHl. assumption. assumption.
-Qed. *)
+
 
 Theorem transitive_dec_first :
   forall (A : Type) (Hcd : forall (c d : A), {c = d} + {c <> d})
