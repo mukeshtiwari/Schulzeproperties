@@ -4,3 +4,4 @@
 src/Candidates.v
 src/Margin.v
 src/Schulze.v
+src/Properties.v
